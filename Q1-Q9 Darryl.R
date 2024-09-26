@@ -36,18 +36,19 @@ for (i in (1:(length(indices)-mlag))){
 }
 
 # QUESTION 8
-nw = 10
+nw = 50
 sentence = rep("",nw)
 word_index = 2
 w = rep(NA,mlag-1)
 first_word_index = sample(length(b),1)
 sentence[1] = b[first_word_index]
+cat(sentence[1], sep = '\n')
 w = append(w,first_word_index)
 for (i in 2:nw) {
   for (j in mlag:1) if (i>j) { ## skip lags too long for current i
     possible_words = c()
     for (k in 1:nrow(m)){
-      if (setequal(m[k,(mlag-j):mlag], w[(mlag-j):mlag])){
+      if (setequal(m[k,(mlag-j+1):mlag], w[(mlag-j+1):mlag])){
         if (!is.na(m[k,(mlag + 1)])){
           possible_words = append(possible_words,m[k,(mlag + 1)])
         }
@@ -65,3 +66,5 @@ for (i in 2:nw) {
 }
 
 # QUESTION 9
+s = sample(length(b),50, replace = TRUE)
+b[s]
