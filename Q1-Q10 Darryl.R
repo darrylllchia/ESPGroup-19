@@ -2,9 +2,8 @@ setwd("C:/Edinburgh/Studying/Extended Statistical Programming") ## comment out o
 a <- scan("4300-0.txt",what="character",skip=73,nlines=32858-73,
           fileEncoding="UTF-8")
 a <- gsub("_(","",a,fixed=TRUE) ## remove "_("
-length(a)
 
-s = "An omnishambles, in a headless chicken factory."
+# QUESTION 5
 split_punct = function(ss){
   #ss = strsplit(s," ")[[1]]
   ns = grep('[,.:;!?]$',ss)
@@ -66,5 +65,9 @@ for (i in 2:nw) {
 }
 
 # QUESTION 9
-s = sample(length(b),50, replace = TRUE)
+s = sample(length(b),50, replace = TRUE) #not sure if sample from b or whole text
 b[s]
+
+# QUESTION 10
+sz = 1000
+b = paste(toupper(substr(b[1:sz],1,1)),substr(b[1:sz],2,nchar(b[1:sz])), sep = '')
