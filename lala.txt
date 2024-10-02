@@ -1,1 +1,43 @@
 oof here
+#6.
+txt <- spl_punc[nzchar(spl_punc) & !is.na(spl_punc)] # remove NA and "" from text
+uni_txt <- unique(tolower(txt)) # find the vector of unique words
+ii <- match(tolower(txt),uni_txt) # mark words in main text with unique words index
+freq <- tabulate(ii, nbins = length(uni_txt)) # calculate word frequency
+desc <- sort(freq, decreasing = TRUE)
+threshold <- desc[1000] # get the threshold frequency of common words
+b <- uni_txt[which(freq >= threshold)] # select m most common words
+
+
+
+# 7.
+token <- match(tolower(txt),b) #replace the common words in main text with its token
+mlag <- 4
+M <- matrix(rep(0,(length(token)-mlag)*(mlag+1)), length(token)-mlag, mlag+1) # create a zero matrix
+for (i in 1:(mlag+1)) {
+    M[,i] <- token[i:(length(token)-mlag-1+i)]
+}
+
+
+
+# 9.
+n = 50
+token_select <- sample(token[!is.na(token)], n, replace = TRUE) # non-return sample tokens
+word_select <- b[token_select] # find certain word to each token
+word_select
+
+
+# 10.
+txt <- spl_punc[nzchar(spl_punc) & !is.na(spl_punc)]
+position_upper <- grep('[A-Z]', txt) # find the index of words start with capital letter in text
+uni_txt <- unique(tolower(txt))  #extract unique text
+ii_lower <- match(txt[-position_upper],uni_txt) #extract token of lower case words
+ii_upper <- match(tolower(txt[position_upper]),uni_txt) #extract token of words start with capital letter
+u_seq <- tabulate(ii_lower, nbins = length(uni_txt)) > tabulate(ii_upper,nbins = length(uni_txt)) #find the words index which often start with a capital letter in the main text
+uni_txt[which(!u_seq)] <- paste(toupper(substr(uni_txt[which(!u_seq)],1,1)),substr(uni_txt[which(!u_seq)],2,nchar(uni_txt[which(!u_seq)])), sep = '') # replace these words with words start with a capital letter
+ii <- match(tolower(txt),tolower(uni_txt))
+freq <- tabulate(ii, nbins = length(uni_txt))
+desc <- sort(freq, decreasing = TRUE)
+threshold <- desc[1000]
+b <- uni_txt[which(freq >= threshold)] # m most common words with certain words start with capital letter
+# ? space before punction? we do not have?
