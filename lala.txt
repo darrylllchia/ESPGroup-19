@@ -28,14 +28,14 @@ first_word_index <- sample(length(b),1) #randomly sample first word
 sentence[1] <- b[first_word_index] #add it to the sentence vector
 cat(sentence[1], sep = '\n')
 w <- append(w,first_word_index)
-w <- as.double(w) #ensure that elements in w are the same type as m
+w <- as.double(w) #ensure that elements in w are the same type as M
 for (i in 2:nw) {
   for (j in mlag:1) if (i>j) { ## skip lags too long for current i
     possible_words <- c() #initialise vector of possible words to sample from
-    for (k in 1:nrow(m)){
-      if (identical(m[k,(mlag-j+1):mlag], w[(mlag-j+1):mlag])){ #check if last j words of w are the same as in m[k,]
-        if (!is.na(m[k,(mlag + 1)])){ 
-          possible_words <- append(possible_words,m[k,(mlag + 1)]) #add words that are not NA to possible_words
+    for (k in 1:nrow(M)){
+      if (identical(M[k,(mlag-j+1):mlag], w[(mlag-j+1):mlag])){ #check if last j words of w are the same as in M[k,]
+        if (!is.na(M[k,(mlag + 1)])){ 
+          possible_words <- append(possible_words,M[k,(mlag + 1)]) #add words that are not NA to possible_words
         }
       }
     }
