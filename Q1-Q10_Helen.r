@@ -101,4 +101,5 @@ freq <- tabulate(ii, nbins = length(uni_txt))
 desc <- sort(freq, decreasing = TRUE)
 threshold <- desc[1000]
 b <- uni_txt[which(freq >= threshold)] # m most common words with certain words start with capital letter
+
 # ? space before punction? we do not have?
