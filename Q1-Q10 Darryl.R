@@ -3,10 +3,12 @@ a <- scan("4300-0.txt",what="character",skip=73,nlines=32858-73,
           fileEncoding="UTF-8")
 a <- gsub("_(","",a,fixed=TRUE) ## remove "_("
 
+txt = c("Inside","skeleton,", "of", "this", "doubt,", "but", "waiting", "out.")
+p = '[,.:;!?]$'
 # QUESTION 5
-split_punct = function(ss){
+split_punct = function(ss,p){
   #ss = strsplit(s," ")[[1]]
-  ns = grep('[,.:;!?]$',ss)
+  ns = grep(p,ss)
   l = length(ss)
   lns = length(ns)
   xs <- rep("",l+lns)
@@ -17,7 +19,8 @@ split_punct = function(ss){
   xs[-append(iis,iis2)] = substr(ss[-ns], 1,100)
   xs
 }
-a = split_punct(a)
+#split_punct(txt,p)
+a = split_punct(a,p)
 
 # QUESTION 6
 b = unique(tolower(a))
@@ -36,28 +39,29 @@ for (i in (1:(length(indices)-mlag))){
 
 # QUESTION 8
 nw = 50
-sentence = rep("",nw)
-word_index = 2
-w = rep(NA,mlag-1)
-first_word_index = sample(length(b),1)
-sentence[1] = b[first_word_index]
+sentence = rep(".",nw) #initialise a sentence vector
+word_index = 2 #index of first predicted word
+w = rep(NA,mlag-1) #initialise window vector of length mlag-1, first word will be appended later to make length mlag
+first_word_index = sample(length(b),1) #randomly sample first word
+sentence[1] = b[first_word_index] #add it to the sentence vector
 cat(sentence[1], sep = '\n')
 w = append(w,first_word_index)
+w = as.double(w) #ensure that elements in w are the same type as m
 for (i in 2:nw) {
   for (j in mlag:1) if (i>j) { ## skip lags too long for current i
-    possible_words = c()
+    possible_words = c() #initialise vector of possible words to sample from
     for (k in 1:nrow(m)){
-      if (setequal(m[k,(mlag-j+1):mlag], w[(mlag-j+1):mlag])){
-        if (!is.na(m[k,(mlag + 1)])){
-          possible_words = append(possible_words,m[k,(mlag + 1)])
+      if (identical(m[k,(mlag-j+1):mlag], w[(mlag-j+1):mlag])){ #check if last j words of w are the same as in m[k,]
+        if (!is.na(m[k,(mlag + 1)])){ 
+          possible_words = append(possible_words,m[k,(mlag + 1)]) #add words that are not NA to possible_words
         }
       }
     }
-    if (length(possible_words)>0){
+    if (length(possible_words)>1){
       x = possible_words[sample(length(possible_words),1)]
       sentence[word_index] = b[x]
       word_index = word_index + 1
-      w = append(w[2:mlag],x)
+      w = append(w[2:mlag],x) #add x to last position of w, remove first element
       cat(b[x], sep = '\n')
       break
     }
