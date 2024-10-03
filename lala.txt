@@ -19,7 +19,7 @@ split_punct <- function(words,pwords){ #words is word text, pwords is punctuatio
 }
 
 #5
-pwords <- c(",", ".", ";", "!", ":", "?")
+pwords <- '[,.:;!?]$'
 a <- split_punct(a,pwords)
 
 #6.
