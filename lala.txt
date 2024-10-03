@@ -1,4 +1,32 @@
 oof here
+#4
+split_punct <- function(words, pwords) {
+  new_words <- character(0)  
+  for (i in 1:length(pwords)) {
+    indices <- grep(pwords[i], words, fixed = TRUE)
+    no_p_words <- gsub(pwords[i], '', words, fixed = TRUE)
+    punct <- gsub(paste0("[^", pwords[i], "]"), "", words)
+    if (length(indices) == 0) {
+      next
+    } #If no matching punctuation mark is found, skip this loop
+    new_words <- rep('0', length(words) + length(punct))
+    p_indices <- indices + (1:length(indices))
+    if (length(p_indices) != length(punct[nzchar(punct)]) {
+      next  
+    } #If the lengths don't match, skip this loop
+    new_words[p_indices] <- punct[nzchar(punct)]
+    new_words[-p_indices] <- no_p_words #Place punctuation marks and words in their respective positions
+    words <- new_words
+  }
+  
+  return(new_words)
+}
+
+
+#5
+pwords <- c(",", ".", ";", "!", ":", "?")
+a <- split_punct(a,pwords)
+
 #6.
 txt <- spl_punc[nzchar(spl_punc) & !is.na(spl_punc)] # remove NA and "" from text
 uni_txt <- unique(tolower(txt)) # find the vector of unique words
