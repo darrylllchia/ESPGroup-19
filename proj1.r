@@ -101,7 +101,7 @@ desc <- sort(freq, decreasing = TRUE)
 threshold <- desc[1000]
 b <- uni_txt[which(freq >= threshold)] # m most common words with certain words start with capital letter
 ## go back to question 7
-token <- match(txt,b) #replace the common words in main text with its token
+token <- match(tolower(txt),tolower(b)) #replace the common words in main text with its token
 mlag <- 4
 M <- matrix(rep(0,(length(token)-mlag)*(mlag+1)), length(token)-mlag, mlag+1) # initialise M matrix
 for (i in 1:(mlag+1)) {
