@@ -20,7 +20,7 @@ split_punct <- function(words,pwords){ #words is word text, pwords is punctuatio
 
 #5
 pwords <- '[,.:;!?]$'
-a <- split_punct(a,pwords)
+spl_punc <- split_punct(a,pwords)
 
 #6.
 txt <- spl_punc[nzchar(spl_punc) & !is.na(spl_punc)] # remove NA and "" from text
