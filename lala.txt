@@ -16,7 +16,7 @@ split_punct <- function(words, pwords) {
     } #If no matching punctuation mark is found, skip this loop
     new_words <- rep('0', length(words) + length(punct))
     p_indices <- indices + (1:length(indices))
-    if (length(p_indices) != length(punct[nzchar(punct)]) {
+    if (length(p_indices) != length(punct[nzchar(punct)])) {
       next  
     } #If the lengths don't match, skip this loop
     new_words[p_indices] <- punct[nzchar(punct)]
