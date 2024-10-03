@@ -5,20 +5,17 @@ a <- gsub("_(","",a,fixed=TRUE) ## remove "_("
 #ba <- a
 
 #4-1
-split_punct <- function(words,pwords){
-  new_words <- character(0)
-  for (i in 1:length(words)) {
-    indices <- grep(pwords[i],words,fixed = TRUE)
-    no_p_words <- gsub(pwords[i],'',words,fixed = TRUE)
-    #punct <- gsub("[^[:punct:]]",'',words)
-    punct <- gsub(paste0("[^", pwords[i], "]"), "", words)
-    new_words <- rep('0',length(words)+length(punct))
-    p_indices <- indices + (1:length(punct))
-    new_words[p_indices] <- punct[nzchar(punct)]
-    new_words[-p_indices] <- no_p_words
-    words <- new_words
-  }
-  return(new_words)
+split_punct <- function(words,pwords){ #words is word text, pwords is punctuations to split
+  ps = grep(pwords,words) #get indexes of words with punctuations
+  l = length(words)
+  lps = length(ps)
+  xs <- rep("",l+lps)
+  iis <- ps+0:(lps-1) #pushing back indexes to make space for punctuations
+  iis2 = ps+1:lps #indexes for punctuations
+  xs[iis2] <- substr(words[ps],nchar(words[ps]),nchar(words[ps])) #insert last character of word, should be punctuation
+  xs[iis] = substr(words[ps],1,nchar(words[ps])-1) #insert the word without punctuation
+  xs[-append(iis,iis2)] = substr(words[-ps], 1,100) #insert the remaining words
+  xs
 }
 
 
