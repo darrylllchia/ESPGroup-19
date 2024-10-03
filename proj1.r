@@ -1,10 +1,13 @@
-#setwd("C:/Users/HUAWEI/Desktop/sds/extend statisting programming") ## comment out of submitted
+# Jiayi Wu-s2664441, Ruobing Dai-s2655029, Darryl Chia-s2740198
+# Darryl Chia created github repositories and write question 8(the most difficult one), Ruobing Dai did question 2 to 5 and Jiayi Wu completed question 6,7,9,10. Finally, both of us check and modify our work.
+
+# setwd("C:/Users/HUAWEI/Desktop/sds/extend statisting programming") ## comment out of submitted
 a <- scan("4300-0.txt",what="character",skip=73,nlines=32858-73,
           fileEncoding="UTF-8")
 a <- gsub("_(","",a,fixed=TRUE) ## remove "_("
 
 
-#4
+# 4
 split_punct <- function(words,pwords){ #words is word text, pwords is punctuations to split
   ps = grep(pwords,words) #get indexes of words with punctuations
   l = length(words)
@@ -18,31 +21,33 @@ split_punct <- function(words,pwords){ #words is word text, pwords is punctuatio
   xs
 }
 
-#5
-pwords <- '[,.:;!?]$'
-spl_punc <- split_punct(a,pwords)
 
-#6.
-txt <- spl_punc[nzchar(spl_punc) & !is.na(spl_punc)] # remove NA and "" from text
-uni_txt <- unique(tolower(txt)) # find the vector of unique words
+# 5
+pwords <- '[,.:;!?]$'
+a <- split_punct(a,pwords)
+
+
+# 6
+txt <- a[nzchar(a) & !is.na(a)] # remove NA and "" from text
+uni_txt <- unique(tolower(txt)) # find unique words
 ii <- match(tolower(txt),uni_txt) # mark words in main text with unique words index
 freq <- tabulate(ii, nbins = length(uni_txt)) # calculate word frequency
-desc <- sort(freq, decreasing = TRUE)
+desc <- sort(freq, decreasing = TRUE) #sort words' frequency in descending order
+# Since more than one words have same frequency of 1000th common words, it is concise to select all the words with same frequency of 1000th common words
 threshold <- desc[1000] # get the threshold frequency of common words
-b <- uni_txt[which(freq >= threshold)] # select m most common words
+b <- uni_txt[which(freq >= threshold)] # select m most common words, m is more than 1000
 
 
-
-# 7.
+# 7
 token <- match(tolower(txt),b) #replace the common words in main text with its token
 mlag <- 4
-M <- matrix(rep(0,(length(token)-mlag)*(mlag+1)), length(token)-mlag, mlag+1) # create a zero matrix
+M <- matrix(rep(0,(length(token)-mlag)*(mlag+1)), length(token)-mlag, mlag+1) # initialise M matrix
 for (i in 1:(mlag+1)) {
-    M[,i] <- token[i:(length(token)-mlag-1+i)]
+  M[,i] <- token[i:(length(token)-mlag-1+i)]
 }
 
 
-# 8.
+# 8
 nw <- 50
 sentence <- rep(NA,nw) #initialise a sentence vector
 word_index <- 2 #index of first predicted word
@@ -74,25 +79,31 @@ for (i in 2:nw) {
 }
 
 
-
-# 9.
+# 9
 n = 50
-token_select <- sample(token[!is.na(token)], n, replace = TRUE) # non-return sample tokens
+token_select <- sample(token[!is.na(token)], n, replace = TRUE) # sample tokens without returning
 word_select <- b[token_select] # find certain word to each token
-word_select
+cat(word_select, sep = '\n')
 
 
-# 10.
+# 10
 txt <- spl_punc[nzchar(spl_punc) & !is.na(spl_punc)]
 position_upper <- grep('[A-Z]', txt) # find the index of words start with capital letter in text
 uni_txt <- unique(tolower(txt))  #extract unique text
-ii_lower <- match(txt[-position_upper],uni_txt) #extract token of lower case words
-ii_upper <- match(tolower(txt[position_upper]),uni_txt) #extract token of words start with capital letter
-u_seq <- tabulate(ii_lower, nbins = length(uni_txt)) > tabulate(ii_upper,nbins = length(uni_txt)) #find the words index which often start with a capital letter in the main text
+ii_lower <- match(txt[-position_upper],uni_txt) #extract tokens of lower case words
+ii_upper <- match(tolower(txt[position_upper]),uni_txt) #extract tokens of words start with capital letter
+u_seq <- tabulate(ii_lower, nbins = length(uni_txt)) > tabulate(ii_upper,nbins = length(uni_txt)) #find the words index which most often start with a capital letter in the main text
 uni_txt[which(!u_seq)] <- paste(toupper(substr(uni_txt[which(!u_seq)],1,1)),substr(uni_txt[which(!u_seq)],2,nchar(uni_txt[which(!u_seq)])), sep = '') # replace these words with words start with a capital letter
 ii <- match(tolower(txt),tolower(uni_txt))
 freq <- tabulate(ii, nbins = length(uni_txt))
 desc <- sort(freq, decreasing = TRUE)
 threshold <- desc[1000]
 b <- uni_txt[which(freq >= threshold)] # m most common words with certain words start with capital letter
-# ? space before punction? we do not have?
+## go back to question 7
+token <- match(txt,b) #replace the common words in main text with its token
+mlag <- 4
+M <- matrix(rep(0,(length(token)-mlag)*(mlag+1)), length(token)-mlag, mlag+1) # initialise M matrix
+for (i in 1:(mlag+1)) {
+  M[,i] <- token[i:(length(token)-mlag-1+i)]
+}
+## Then we can go back to question 8 to simulate again.
