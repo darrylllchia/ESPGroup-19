@@ -1,5 +1,5 @@
 # Jiayi Wu-s2664441, Ruobing Dai-s2655029, Darryl Chia-s2740198
-# Darryl Chia created github repositories and write question 8(the most difficult one), Ruobing Dai did question 2 to 5 and Jiayi Wu completed question 6,7,9,10. Finally, both of us check and modify our work.
+# Darryl Chia created github repositories and write question 8(the most difficult one), Ruobing Dai did question 2 to 5 and Jiayi Wu completed question 6,7,9,10. Finally, all of us ran through to check and modify our work.
 
 # setwd("C:/Users/HUAWEI/Desktop/sds/extend statisting programming") ## comment out of submitted
 a <- scan("4300-0.txt",what="character",skip=73,nlines=32858-73,
