@@ -31,9 +31,14 @@ for (i in 1:n.rep){
 
 if (i==1) p_before = compute_p(t0) else p_before = P[i-1]
 
+if (i<=50){
+  samp = c(-8,-4,-2,-1,1,2,4,8)
+} else if (i<=75){
+  samp = c(-4,-2,-1,1,2,4)
+} else samp = c(-2,-1,1,2)
 t1 = c(rep(NA,n))
 temp = sample(1:n, size = n) #all indexes in random order
-c = sample(c(-4,-2,-1,1,2,4), size = n, replace = TRUE)
+c = sample(samp, size = n, replace = TRUE)
 t1[temp] = t0[temp] + c #pushing back or adding days for death
 t1[t1<1]=1
 t1[t1>150]=150
