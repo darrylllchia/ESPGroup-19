@@ -1,0 +1,42 @@
+setwd("C:/Users/HUAWEI/Desktop/sds/extend statisting programming/作业2")
+getwd()
+data <- read.table('engcov.txt')[1:150,]#Read the first 150 rows of data
+
+#1
+infect_to_death <- dlnorm(1:80,meanlog = 3.152,sdlog = 0.451)#Probability distribution of time from infection to death
+itd_prob <- infect_to_death / sum(infect_to_death)#Sum the probabilities to 1
+
+#2
+day <- data$julian#Extract the number of days to death (julian column)
+num <- data$nhs#Extract the number of deaths (nhs column)
+death_days <- rep(day,num)#Each death corresponds to a date of death
+n <- length(death_days)#Total number of deaths
+infect_to_death_days <- sample(1:80,size = n,replace = TRUE,prob = itd_prob)#Number of days from infection to death randomised from 1 to 80
+t0 <- death_days - infect_to_death_days#Initial guess of infection time
+
+#4
+pearson <- function(actual_death,simulate_death){
+  p <- sum((actual_death - simulate_death)^2 / pmax(1,simulate_death))
+  return(p)
+}#Define the Pearson Function
+infect_to_death_days2 <- sample(1:80,size = n,replace = TRUE,prob = itd_prob)
+simulate_death_days <- t0 + infect_to_death_days2#Simulate date of death
+simulate_death_num <- tabulate(simulate_death_days,nbins = 310)#Simulated number of deaths per day
+p <- pearson(num,simulate_death_num[day])
+
+#5
+t0_new <- function(t0,p) {
+  for (i in sample(length(t0))){
+    move <- sample(c(-4,-2,-1,1,2,4),size = 1)#Days moved
+    t0_n <- t0
+    t0_n[i] <- t0[i] + move#Adjust of infection time
+    simulate_death_days_new <- t0_n + sample(1:80,size = n,replace = TRUE,prob = itd_prob)#New simulated date of death 
+    simulate_death_num_new <- tabulate(simulate_death_days_new,nbins = 310)#New simulated number of deaths per day
+    p_new <- pearson(num,simulate_death_num_new[day])#New Pearson statistc of p
+    if (p_new < p) {
+      t0 <- t0_n
+      p <- p_new
+    }#If the new p is smaller, accept the new t0
+  }
+  return(list(t0=t0,p=p))
+}
