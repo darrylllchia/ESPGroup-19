@@ -25,13 +25,14 @@ simulate_death_num <- tabulate(simulate_death_days,nbins = 310)#Simulated number
 p <- pearson(num,simulate_death_num[day])
 
 #5
-t0_new <- function(t0,p) {
+t0_new <- function(t0,p,num,itd_prob,death_days) {
   for (i in sample(length(t0))){
     move <- sample(c(-4,-2,-1,1,2,4),size = 1)#Days moved
     t0_n <- t0
-    t0_n[i] <- t0[i] + move#Adjust of infection time
+    t0_n[i] <- pmax(1, pmin(t0[i] + move, 310))#Adjust of infection time
     simulate_death_days_new <- t0_n + sample(1:80,size = n,replace = TRUE,prob = itd_prob)#New simulated date of death 
     simulate_death_num_new <- tabulate(simulate_death_days_new,nbins = 310)#New simulated number of deaths per day
+    #print(summary(simulate_death_days_new))
     p_new <- pearson(num,simulate_death_num_new[day])#New Pearson statistc of p
     if (p_new < p) {
       t0 <- t0_n
@@ -40,3 +41,30 @@ t0_new <- function(t0,p) {
   }
   return(list(t0=t0,p=p))
 }
+
+deconv <- function(t,deaths,n.rep = 100,bs = FALSE,t0 = NULL) {
+  if(is.null(t0)) {
+    infect_to_death_days <- sample(1:80,size = length(t),replace = TRUE,prob = itd_prob)
+    t0 <- t - infect_to_death_days
+  }
+  simulate_death_days <- t0 + sample(1:80,size = length(t),replace = TRUE,prob = itd_prob)
+  simulate_death_num <- tabulate(simulate_death_days,nbins = max(t))
+  p <- pearson(deaths,simulate_death_num)
+  
+  P <- numeric(n.rep)
+  
+  inft <- matrix(NA,nrow = 310,ncol = n.rep)
+  
+  for(j in 1:n.rep) {
+    tp_list <- t0_new(t0,p,deaths,itd_prob,t)
+    t0 <- tp_list$t0
+    p <- tp_list$p
+    P[j] <- p
+    inft[,j] <- tabulate(t0,nbins = 310)
+    #plot(1:310,inft[,j],type = "l",ylim = range(c(deaths,inft[,j])))
+    #lines(1:310,deaths)
+  }
+  
+  return(list(p = P,inft = inft,t0 = t0))
+}
+tp <- deconv(day,num,n.rep = 100)
