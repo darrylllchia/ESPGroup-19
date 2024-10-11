@@ -7,7 +7,7 @@ distribution = distribution/sum(distribution)
 len = length(covid$nhs)
 days = 310
 deaths = covid$nhs
-death_day = rep(c((1+61):(len+61)), times = deaths)
+death_day = rep(c((1+61):(len+61)), times = deaths) #results are starting from 62nd day
 n = length(death_day)
 samps = sample(x = c(1:80),prob = distribution, size = n, replace = TRUE)
 t0 = death_day - samps #initial incidence days
@@ -39,9 +39,10 @@ if (i<=50){
 } else samp = c(-2,-1,1,2)
 
 samps2 = sample(x = c(1:80),prob = distribution, size = n, replace = TRUE)
-td = t0+samps2 #initial death days
+td = t0+samps2 #initial death days = initial incidence + incidence-to-death distribution data
 td[td<1]=1
 
+#keep track of values of p for comparison later
 if (i==1) p_before = compute_p(td) else p_before = P[i-1]
 
 t1 = c(rep(NA,n))
@@ -49,27 +50,29 @@ temp = sample(1:n, size = n) #all indexes in random order
 c = sample(samp, size = n, replace = TRUE)
 t1[temp] = td + c #pushing back or adding days for death
 t1[t1<1]=1
-death_sim2 = tabulate(t1,nbins = days)
+death_sim2 = tabulate(t1,nbins = days) #new deaths per day vector
 
 for (j in 1:n){
   ind = temp[j]
-  add = death_sim2[t1[ind]]
-  sub = death_sim2[td[ind]]
+  add = death_sim2[t1[ind]] #date of death after adding c
+  sub = death_sim2[td[ind]] #date of death before adding c
+  
+  #comparing only both dates that have their death numbers changed because other date values stay the same
   new_val = ((death_plot[t1[ind]]-add)^2)/max(1,add) + ((death_plot[td[ind]]-sub)^2)/max(1,sub)
   old_val = ((death_plot[td[ind]]-(sub+1))^2)/max(1,sub+1) + ((death_plot[t1[ind]]-(add-1))^2)/max(1,add-1)
-  if (new_val<old_val) {
-    td[ind] = t1[ind]
+  
+  if (new_val<old_val) { #adding c is gives a lower(better) value of p
+    td[ind] = t1[ind] #td contains optimal death days for each person each iteration
   } else {
-    death_sim2[td[ind]] = sub+1
+    death_sim2[td[ind]] = sub+1 #updating deaths per day vector
     death_sim2[t1[ind]] = add-1
   }
   }
 
-p_after = compute_p(td,TRUE)# plot simulated deaths per day
-inc = td-samps2
-inc = inc[inc>0]
-lines(tabulate(inc,nbins = len), col = 'red')# plot incidence per day
-print(i)
+p_after = compute_p(td,TRUE) #plot simulated deaths per day
+inc = td-samps2 #simulated incidence vector
+inc = inc[inc>0] 
+lines(tabulate(inc,nbins = len), col = 'red')
 inft[,i] = tabulate(td,nbins = days)
 P[i] = min(p_before,p_after)
 
