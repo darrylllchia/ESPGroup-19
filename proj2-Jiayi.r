@@ -12,8 +12,8 @@ data <- read.table('engcov.txt')[1:150, ] ## read data, store it as data.frame
 
 t <- data$julian
 deaths <- data$nhs
-
-deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
+bs <- TRUE
+deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
   n <- 29442
   P_vec <- c()
   t0_mat <- matrix(nrow = n, ncol = n.rep)
@@ -39,7 +39,7 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
   }
   
   d <- tabulate(death_d, nbins = 310) # create a vector of number of deaths on each day
-  plot(c(1:310), d, ylim = c(0, 1500), type = 'l', col = "black", xlab = 'days of the year')
+  plot(c(1:310), d, ylim = c(0, 1700), type = 'l', col = "black", xlab = 'days of the year')
   legend("topright", legend = c('real deaths', 'simulated deaths', 'estimated incidence'), col = c("black", "blue", "red"), lwd = 3)
   
   for(k in 1:n.rep){
@@ -92,21 +92,22 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
   
   
   if(bs){
-    for(k in 1:length(deaths)){
+    plot(1:310, inft[ ,ncol(inft)], type = 'l', col = 'blue', lwd = 2, xlab = "days of the year", ylab = "estimated incidence")
+    for(k in 1:50){
 
-      deaths <- rpois(length(deaths), deaths[k])
+      deaths_new <- sapply(deaths, function(x) rpois(1, x))
       
       if(is.null(t0)){
         # 2
         #create a vector of death day for each individual fatalities
-        death_d <- rep(t, deaths)
+        death_d <- rep(t, deaths_new)
         # randomly generate n infection-to-death durations with replacement based on probability vector
         duration <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
         # death day substract infection-to-death duration to get initial guesses for the days of infection
         t0 <- death_d - duration 
       }
       
-      death_d <- rep(t, deaths)
+      death_d <- rep(t, deaths_new)
       # 4
       # generate n new draws from the infection-to-death distribution as simulation duaration
       simu_duat <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
@@ -117,15 +118,16 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
       P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
       # Problem: ignore death_d_s<0?
       
+      
       # 5
       t0_dura <- cbind(t0, simu_duat) # combine t0 to duration time to keep infection to death duration fixed
       t0_dura_ran <- t0_dura[sample(length(t0)), ] # randomly order t0
       step <- c()
-      if(k>=1 && k<=50){step <- c(-8, -4, -2, -1, 1, 2, 4, 8)}
-      else if (k>=51 && k<=75) {step <- c(-4, -2, -1, 1, 2, 4)}
-      else {step <- c(-2, -1, 1, 2)}
+      if(k>=1 && k<=50){step <- c(-8, -4, -2, -1, 1, 2, 4, 8)
+      } else if (k>=51 && k<=75) {step <- c(-4, -2, -1, 1, 2, 4)
+      } else {step <- c(-2, -1, 1, 2)}
       moving <- sample(step, length(t0), replace = TRUE) # create moving vector by randomly choose from step
-      death_d_m <- rowSums(t0_dura_ran) + moving # create death day vector(contains death day of each individual fatalities) after moving
+      death_d_m <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] + moving # create death day vector(contains death day of each individual fatalities) after moving
       for (i in 1:length(death_d_m)) {
         d_s[death_d_m[i]] <- d_s[death_d_m[i]] + 1 # increase deaths on day i by 1
         d_s[death_d_m[i]-moving[i]] <- d_s[death_d_m[i]-moving[i]] - 1
@@ -141,26 +143,18 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
           d_s[death_d_m[i]-moving[i]] <- d_s[death_d_m[i]-moving[i]] + 1
         }
       }
-      t0 <- t0_dura_ran[ ,1]
       inci <- tabulate(t0_dura_ran[ ,1], nbins = 310)
+      lines(c(1:310), inci, col = 'red')
+      t0 <- t0_dura_ran[ ,1]
       intr[ ,k] <- inci
     }
-    intr_mean <- apply(intr, 1, mean)
-    intr_se <- apply(intr, 1, function(x){sd(x) / sqrt(length(x))})
-    lower <- intr_mean - intr_se*1.96
-    upper <- intr_mean + intr_se*1.96     
-    plot(1:310, inft[ ,ncol(inft)], type = 'l', col = 'blue', xlab = "days of the year", ylab = "estimated incidence")
-    lines(1:310, lower, col = 'orange')
-    lines(1:310, upper, col = 'orange')
-    abline(v = 84, col = 'red')
-    polygon(c(1:310, rev(1:310)), c(lower, rev(upper)), col = rgb(0.5, 0.5, 1, 0.5), border = NA)
   }
   P <- P_vec
   t0 <- t0_mat[, ncol(t0_mat)]
   return(list(P = P, inft = inft, t0 = t0))
 }
 
-output <- deconv(t, deaths, n.rep = 100, bs = TRUE, t0 = NULL)
+output <- deconv(t, deaths, n.rep = 100, bs = TRUE, t0 = NULL, n.times = 150)
 output$P
 output$inft
 output$t0
