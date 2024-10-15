@@ -39,7 +39,7 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
   }
   
   d <- tabulate(death_d, nbins = 310) # create a vector of number of deaths on each day
-  plot(c(1:310), d, ylim = c(0, 1200), type = 'l', col = "black", xlab = 'days of the year')
+  plot(c(1:310), d, ylim = c(0, 1500), type = 'l', col = "black", xlab = 'days of the year')
   legend("topright", legend = c('real deaths', 'simulated deaths', 'estimated incidence'), col = c("black", "blue", "red"), lwd = 3)
   
   for(k in 1:n.rep){
@@ -48,8 +48,8 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
     simu_duat <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
     death_d_s <- t0 + simu_duat # add simulation duaration to t0 to get simulated death days
     d_s <- tabulate(death_d_s, nbins = 310) # create a vector of simulated deaths on each day
-    P_deter <- as.numeric(d_s <= 1) + as.numeric(d_s > 1) * d_s
-    P <- sum((d - d_s)^2 / P_deter) # calculate modified Pearson statistic P
+    # P_deter <- as.numeric(d_s <= 1) + as.numeric(d_s > 1) * d_s
+    P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
     # Problem: ignore death_d_s<0?
     
     # 5
@@ -82,10 +82,10 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
       }
     }
     t0 <- t0_dura_ran[ ,1]
-    death_si <- tabulate(t0_dura_ran[ ,1] + t0_dura_ran[ ,2], nbins = 310)
-    lines(c(1:310), death_si, col = 'red')
+    inci <- tabulate(t0_dura_ran[ ,1], nbins = 310)
+    lines(c(1:310), inci, col = 'red')
     lines(c(1:310), d_s, col = 'blue')
-    inft[ ,k] <- d_s
+    inft[ ,k] <- inci
     P_vec <- c(P_vec,P)
     t0_mat[ ,k] <- t0
   }
@@ -113,8 +113,8 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
       death_d_s <- t0 + simu_duat # add simulation duaration to t0 to get simulated death days
       d <- tabulate(death_d, nbins = 310) # create a vector of number of deaths on each day
       d_s <- tabulate(death_d_s, nbins = 310) # create a vector of simulated deaths on each day
-      P_deter <- as.numeric(d_s <= 1) + as.numeric(d_s > 1) * d_s
-      P <- sum((d - d_s)^2 / P_deter) # calculate modified Pearson statistic P
+      # P_deter <- as.numeric(d_s <= 1) + as.numeric(d_s > 1) * d_s
+      P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
       # Problem: ignore death_d_s<0?
       
       # 5
@@ -142,7 +142,8 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
         }
       }
       t0 <- t0_dura_ran[ ,1]
-      intr[ ,k] <- d_s
+      inci <- tabulate(t0_dura_ran[ ,1], nbins = 310)
+      intr[ ,k] <- inci
     }
     intr_mean <- apply(intr, 1, mean)
     intr_se <- apply(intr, 1, function(x){sd(x) / sqrt(length(x))})
@@ -163,3 +164,5 @@ output <- deconv(t, deaths, n.rep = 100, bs = TRUE, t0 = NULL)
 output$P
 output$inft
 output$t0
+
+plot(1:100,output$P, type = 'b')
