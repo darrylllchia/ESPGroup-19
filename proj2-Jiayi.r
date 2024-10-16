@@ -12,7 +12,7 @@ data <- read.table('engcov.txt')[1:150, ] ## read data, store it as data.frame
 
 t <- data$julian
 deaths <- data$nhs
-bs <- TRUE
+
 deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
   n <- 29442
   P_vec <- c()
@@ -81,21 +81,24 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
         d_s[death_d_m[i]-moving[i]] <- d_s[death_d_m[i]-moving[i]] + 1
       }
     }
+    
     t0 <- t0_dura_ran[ ,1]
     inci <- tabulate(t0_dura_ran[ ,1], nbins = 310)
-    lines(c(1:310), inci, col = 'red')
-    lines(c(1:310), d_s, col = 'blue')
     inft[ ,k] <- inci
     P_vec <- c(P_vec,P)
     t0_mat[ ,k] <- t0
+    lines(c(1:310), inci, col = 'red')
+    lines(c(1:310), d_s, col = 'blue')
+
   }
   
   
   if(bs){
-    plot(1:310, inft[ ,ncol(inft)], type = 'l', col = 'blue', lwd = 2, xlab = "days of the year", ylab = "estimated incidence")
-    for(k in 1:50){
+    plot(1:310, inft[ ,ncol(inft)], type = 'l', col = 'blue', lwd = 3, xlab = "days of the year", ylab = "estimated incidence")
+    death_simulation <- sapply(deaths, function(x) rpois(n.times, x))
+    for(k in 1:n.times){
 
-      deaths_new <- sapply(deaths, function(x) rpois(1, x))
+      deaths_new <- death_simulation[k, ]
       
       if(is.null(t0)){
         # 2
@@ -116,7 +119,6 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
       d_s <- tabulate(death_d_s, nbins = 310) # create a vector of simulated deaths on each day
       # P_deter <- as.numeric(d_s <= 1) + as.numeric(d_s > 1) * d_s
       P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
-      # Problem: ignore death_d_s<0?
       
       
       # 5
@@ -156,7 +158,7 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
 
 output <- deconv(t, deaths, n.rep = 100, bs = TRUE, t0 = NULL, n.times = 150)
 output$P
-output$inft
+output$inftÍ
 output$t0
 
 plot(1:100,output$P, type = 'b')
