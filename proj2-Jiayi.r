@@ -20,7 +20,7 @@ t <- data$julian
 deaths <- data$nhs
 
 #'Function Name: deconv
-#'Description: This function is to display the estimated death and incidence rate of covid 19 compared to the actual deaths in England. 
+#'Description: This function displays the estimated death and incidence rate of covid 19 compared to the actual deaths in England. 
 #'Parameters:
 #'  t: The days to be analysed
 #'  deaths: The number of deaths on each day
