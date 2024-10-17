@@ -1,10 +1,10 @@
 # Aim of this task: Use simulation based method to infer fatal incidence rates from Covid deaths in English hospitals.
 
-# 1. Assign each victim a guessed time of infection
-# 2. add a random draw from the infection-to-death distribution to each time of infection to get the implied times of death
+# 1. Assign each victim an estimated time of infection
+# 2. add a random sample from the infection-to-death distribution to each time of infection to get the implied times of death
 # Initially the resulting distribution of times of death will poorly match the real distribution.
 # 3. randomly propose to move each time of infection a few days, only accepting the proposed move if the change improves the simulation’s fit to the real death time distribution. 
-# 4. This process is simply iterated until we match the death time distribution well.
+# 4. This process is simply iterated for n.rep times.
 
 ##read table to get  the first 150 rows of data
 setwd("/Users/macbook/Statistical-Programming/assignment")
@@ -31,11 +31,11 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
   
   if(is.null(t0)){
     # 2
-    #create a vector of death day for each individual fatalities
+    #create a vector of day of death for each individual fatality
     death_d <- rep(t, deaths)
     # randomly generate n infection-to-death durations with replacement based on probability vector
     duration <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
-    # death day substract infection-to-death duration to get initial guesses for the days of infection
+    # infection-to-death duration subtracted from death day to get initial estimates for the days of infection
     t0 <- death_d - duration
     t0[t0 <= 0] <- 1 # set the non-positive infection day as 1
   }
@@ -48,7 +48,7 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
     # 4
     # generate n new draws from the infection-to-death distribution as simulation duaration
     simu_duat <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
-    death_d_s <- t0 + simu_duat # add simulation duaration to t0 to get simulated death days
+    death_d_s <- t0 + simu_duat # add simulation duration to t0 to get simulated death days
     d_s <- tabulate(death_d_s, nbins = max_day) # create a vector of simulated deaths on each day
     P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
     
@@ -66,25 +66,26 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
       step <- c(-2, -1, 1, 2)
     }
     
-    moving <- sample(step, length(t0), replace = TRUE) # create moving vector by randomly choose from step
-    death_d_bm <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] # create death day of each individual vector before moving
-    death_d_m <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] + moving # create death day of each individual vector after moving
+    moving <- sample(step, length(t0), replace = TRUE) # create moving vector by randomly choosing from step
+    death_d_bm <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] # create death day of each individual before moving
+    death_d_m <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] + moving # create death day of each individual after moving
     
     # for each elements in t0, accept the proposed move if the change improves the simulation’s fit to the real death time distribution, ie. reduce P
     for (i in 1:length(death_d_m)) {
       dead_bef_move <- death_d_bm[i] # the death day before move
       dead_aft_move <- death_d_m[i] # the death day after move
-      # calculate prior
+      # calculate change in P: only need to calculate the difference in deaths with the actual days for the 2 days involved in the moving
+      # P_pri is before moving, P_for is after moving
       P_pri <- (d_s[dead_bef_move] - d[dead_bef_move])^2 / max(1, d_s[dead_bef_move]) + (d_s[dead_aft_move] - d[dead_aft_move])^2 / max(1, d_s[dead_aft_move])
       d_s[dead_aft_move] <- d_s[dead_aft_move] + 1 # increase deaths on day after moving by 1
       d_s[dead_bef_move] <- d_s[dead_bef_move] - 1 # decrease deaths on day before moving by 1
       P_for <- (d_s[dead_bef_move] - d[dead_bef_move])^2 / max(1, d_s[dead_bef_move]) + (d_s[dead_aft_move] - d[dead_aft_move])^2 / max(1, d_s[dead_aft_move])
       P_m <- P + P_for - P_pri # calculate P after moving
-      if(P_m < P) { #if P after moving decrease, update P and accept move
+      if(P_m < P) { # if P decreases after moving, update P and accept move
         P <- P_m
         t0_dura_ran[i,1] <- t0_dura_ran[i,1] + moving[i]
       } 
-      else { #if P after moving do not decrease, leave t0 and P unchanged
+      else { #if P does not decrease after moving, leave t0 and P unchanged
         d_s[dead_aft_move] <- d_s[dead_aft_move] - 1
         d_s[dead_bef_move] <- d_s[dead_bef_move] + 1
       }
@@ -112,11 +113,11 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
       
       if(is.null(t0)){
         # 2
-        #create a vector of death day for each individual fatalities
+        #create a vector of death day for each individual fatality
         death_d <- rep(t, deaths_new)
         # randomly generate n infection-to-death durations with replacement based on probability vector
         duration <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
-        # death day substract infection-to-death duration to get initial guesses for the days of infection
+        # infection-to-death duration subtracted from death day to get initial estimates for the days of infection
         t0 <- death_d - duration 
       }
       
@@ -124,7 +125,7 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
       # 4
       # generate n new draws from the infection-to-death distribution as simulation duaration
       simu_duat <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
-      death_d_s <- t0 + simu_duat # add simulation duaration to t0 to get simulated death days
+      death_d_s <- t0 + simu_duat # add simulation duration to t0 to get simulated death days
       d <- tabulate(death_d, nbins = max_day) # create a vector of number of deaths on each day
       d_s <- tabulate(death_d_s, nbins = max_day) # create a vector of simulated deaths on each day
       # P_deter <- as.numeric(d_s <= 1) + as.numeric(d_s > 1) * d_s
@@ -138,9 +139,9 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
       if(k>=1 && k<=50){step <- c(-8, -4, -2, -1, 1, 2, 4, 8)
       } else if (k>=51 && k<=75) {step <- c(-4, -2, -1, 1, 2, 4)
       } else {step <- c(-2, -1, 1, 2)}
-      moving <- sample(step, length(t0), replace = TRUE) # create moving vector by randomly choose from step
-      death_d_bm <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] # create death day of each individual vector before moving
-      death_d_m <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] + moving # create death day of each individual vector after moving
+      moving <- sample(step, length(t0), replace = TRUE) # create moving vector by randomly choosing from step
+      death_d_bm <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] # create death day of each individual before moving
+      death_d_m <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] + moving # create death day of each individual after moving
       
       for (i in 1:length(death_d_m)) {
         dead_bef_move <- death_d_bm[i]
