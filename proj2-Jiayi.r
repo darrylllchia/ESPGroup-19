@@ -14,11 +14,13 @@ t <- data$julian
 deaths <- data$nhs
 
 deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
-  n <- 29442
-  P_vec <- c()
-  t0_mat <- matrix(nrow = n, ncol = n.rep)
-  inft <- matrix(nrow = 310, ncol = n.rep)
-  intr <- matrix(nrow = 310, ncol = n.times)
+  death_d <- rep(t, deaths) # create a vector of death day for each individual fatalities
+  n <- length(death_d) # number of fatalities
+  max_day <- 310 # set the max observation day
+  P_vec <- c() # initialise vector to store each P
+  t0_mat <- matrix(nrow = n, ncol = n.rep) # initialise matrix to store each t0 after each full update
+  inft <- matrix(nrow = max_day, ncol = n.rep) # initialise matrix to store the number of new infections per day 
+  intr <- matrix(nrow = max_day, ncol = n.times) # initialise matrix to store the number of new infections per day after bootstrapping
   
   # 1
   ##find the probability vector of each disease duration based on given log normal density.
@@ -35,24 +37,26 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
     duration <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
     # death day substract infection-to-death duration to get initial guesses for the days of infection
     t0 <- death_d - duration
-    t0[t0 <= 0] <- 1
+    t0[t0 <= 0] <- 1 # set the non-positive infection day as 1
   }
   
-  d <- tabulate(death_d, nbins = 310) # create a vector of number of deaths on each day
-  plot(c(1:310), d, ylim = c(0, 1700), type = 'l', lwd = 3, col = "black", xlab = 'Days of the year')
-  legend("topright", legend = c('Real deaths', 'Simulated deaths', 'Estimated incidence'), col = c("black", "blue", "red"), lwd = 3)
+  d <- tabulate(death_d, nbins = max_day) # create a vector of number of deaths on each day
+  plot(c(1:max_day), d, ylim = c(0, 1700), type = 'l', lwd = 3, col = "black", xlab = 'Days of the year') # draw a plot of relationship between real deaths and day of the year
+  legend("topright", legend = c('Real deaths', 'Simulated deaths', 'Estimated incidence'), col = c("black", "blue", "red"), lwd = 3) 
   
   for(k in 1:n.rep){
     # 4
     # generate n new draws from the infection-to-death distribution as simulation duaration
     simu_duat <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
     death_d_s <- t0 + simu_duat # add simulation duaration to t0 to get simulated death days
-    d_s <- tabulate(death_d_s, nbins = 310) # create a vector of simulated deaths on each day
+    d_s <- tabulate(death_d_s, nbins = max_day) # create a vector of simulated deaths on each day
     P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
     
-    # 5
+    # 5. randomly order each time of infection and move it a few days
     t0_dura <- cbind(t0, simu_duat) # combine t0 to duration time to keep infection to death duration fixed
     t0_dura_ran <- t0_dura[sample(length(t0)), ] # randomly order t0
+    
+    # change the moving step during repetition to improve convergence rate
     step <- c()
     if (k >= 1 && k <= 50) {
       step <- c(-8, -4, -2, -1, 1, 2, 4, 8)
@@ -61,13 +65,16 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
     } else {
       step <- c(-2, -1, 1, 2)
     }
+    
     moving <- sample(step, length(t0), replace = TRUE) # create moving vector by randomly choose from step
     death_d_bm <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] # create death day of each individual vector before moving
     death_d_m <- t0_dura_ran[ ,1] + t0_dura_ran[ ,2] + moving # create death day of each individual vector after moving
     
+    # for each elements in t0, accept the proposed move if the change improves the simulation’s fit to the real death time distribution, ie. reduce P
     for (i in 1:length(death_d_m)) {
-      dead_bef_move <- death_d_bm[i]
-      dead_aft_move <- death_d_m[i]
+      dead_bef_move <- death_d_bm[i] # the death day before move
+      dead_aft_move <- death_d_m[i] # the death day after move
+      # calculate prior
       P_pri <- (d_s[dead_bef_move] - d[dead_bef_move])^2 / max(1, d_s[dead_bef_move]) + (d_s[dead_aft_move] - d[dead_aft_move])^2 / max(1, d_s[dead_aft_move])
       d_s[dead_aft_move] <- d_s[dead_aft_move] + 1 # increase deaths on day after moving by 1
       d_s[dead_bef_move] <- d_s[dead_bef_move] - 1 # decrease deaths on day before moving by 1
@@ -84,20 +91,21 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
     }
     
     t0 <- t0_dura_ran[ ,1]
-    inci <- tabulate(t0_dura_ran[ ,1], nbins = 310)
+    inci <- tabulate(t0, nbins = max_day)
     P_vec <- c(P_vec,P)
     inft[ ,k] <- inci
     t0_mat[ ,k] <- t0
-    lines(c(1:310), inci, col = 'red')
-    lines(c(1:310), d_s, col = 'blue')
+    lines(c(1:max_day), inci, col = 'red')
+    lines(c(1:max_day), d_s, col = 'blue')
     
   }
   
-  
+  #
   if(bs){
-    plot(1:310, inft[ ,ncol(inft)], ylim = c(0, 1700), type = 'l', col = 'blue', lwd = 3, xlab = "days of the year", ylab = "estimated incidence")
-    legend("topright", legend = c('Real data incidence', 'Simulated data incidence'), col = c("blue", "red"), lwd = 3)
+    plot(1:max_day, inft[ ,ncol(inft)], ylim = c(0, 1700), type = 'l', col = 'blue', lwd = 4, xlab = "Days of the year", ylab = "Estimated incidence")
+    legend("topright", legend = c('Real incidence', 'Simulated incidence', 'Real deaths'), col = c("blue", "red", "black"), lwd = 3)
     death_simulation <- sapply(deaths, function(x) rpois(n.times, x))
+    
     for(k in 1:n.times){
       
       deaths_new <- death_simulation[k, ]
@@ -117,8 +125,8 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
       # generate n new draws from the infection-to-death distribution as simulation duaration
       simu_duat <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
       death_d_s <- t0 + simu_duat # add simulation duaration to t0 to get simulated death days
-      d <- tabulate(death_d, nbins = 310) # create a vector of number of deaths on each day
-      d_s <- tabulate(death_d_s, nbins = 310) # create a vector of simulated deaths on each day
+      d <- tabulate(death_d, nbins = max_day) # create a vector of number of deaths on each day
+      d_s <- tabulate(death_d_s, nbins = max_day) # create a vector of simulated deaths on each day
       # P_deter <- as.numeric(d_s <= 1) + as.numeric(d_s > 1) * d_s
       P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
       
@@ -152,11 +160,12 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
         }
       }
       
-      inci <- tabulate(t0_dura_ran[ ,1], nbins = 310)
-      lines(c(1:310), inci, col = 'red')
+      inci <- tabulate(t0_dura_ran[ ,1], nbins = max_day)
+      lines(c(1:max_day), inci, col = 'red')
       t0 <- t0_dura_ran[ ,1]
       intr[ ,k] <- inci
     }
+    lines(1:max_day, d, col = 'black', lwd = 2)
   }
   P <- P_vec
   t0 <- t0_mat[, ncol(t0_mat)]
