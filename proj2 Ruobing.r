@@ -65,3 +65,12 @@ deconv <- function(t, deaths, n.rep = 100, bs = FALSE, t0 = NULL) {
 }
 
 tp <- deconv(day, num, n.rep = 100)
+
+mean_inft <- rowMeans(tp$inft) 
+plot(1:310, mean_inft, type = "l", ylim = range(c(mean_inft, ci)), 
+     ylab = "Estimated Infections", xlab = "Days", col = "blue", lwd = 2)
+points(day, num, col = "red", pch = 20)
+abline(v = 84, col = "black", lty = 2)
+legend("topright", legend = c("Estimated Infections", "95% CI", "Actual Deaths", "UK Lockdown"), 
+       col = c("blue", rgb(0.1, 0.1, 0.9, 0.2), "red", "black"), 
+       lty = c(1, NA, NA, 2), pch = c(NA, 15, 20, NA), lwd = 2, pt.cex = 1.5)
