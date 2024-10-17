@@ -13,6 +13,18 @@ t <- data$julian
 deaths <- data$nhs
 
 deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
+  
+# The purpose of this function is to display the estimated death and incidence rate of covid 19 compared to the actual deaths in England. 
+# Data on daily death numbers is compared against simulated data sampled from a distribution with set parameters.
+# The loss function (P) involved is proportional to the squared difference between the simulated deaths and the actual deaths each day. 
+# The process repeats for a set number of times (n.rep). Over time, P is expected to decrease.
+# Bootstrapping also helps to see any uncertainty with our simulation and can be activated with the logical input to the function 'bs'.
+# It compares the converged vector of days of death(t0) with data generated from a poisson distribution, using 
+# the actual number of deaths of each day as the lambda parameter for each day.
+# The function takes in the number of deaths on each day, the days to be analysed and hyperparameters bs, n.rep and t0.
+# The function outputs a list containing a matrix(inft) of the simulated number of deaths after each iteration,
+# a vector of Ps after each iteration and the converged t0.
+
   death_d <- rep(t, deaths) # create a vector of death day for each individual fatalities
   n <- length(death_d) # number of fatalities
   max_day <- 310 # set the max observation day
