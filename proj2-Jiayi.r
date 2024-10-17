@@ -5,12 +5,12 @@
 # Aim of this task: Use simulation based method to infer fatal incidence rates from Covid deaths in English hospitals.
 
 # 1. Assign each victim a guessed time of infection
-# 2. add a random draw from the infection-to-death distribution to each time of infection to get the implied times of death
-# 3. randomly propose to move each time of infection a few days, only accepting the proposed move if the change improves the simulation’s fit to the real death time distribution. 
+# 2. Add a random draw from the infection-to-death distribution to each time of infection to get the implied times of death
+# 3. Randomly propose to move each time of infection a few days, only accepting the proposed move if the change improves the simulation’s fit to the real death time distribution. 
 # 4. Iterate this process until we have a good match for the death time distribution.
 # 5. Plot a graph showing the actual death time, simulated death time, and infection rate, adding each new death time line as it iterates.
-# 6. Using an approximate bootstrapping approach applied once the method has converged to quantify its uncertainty.
-# (Using real death data as expected values for Poisson variables, then simulates Poisson data based on these values to replace the real data.)
+# 6. Use an approximate bootstrapping approach applied once the method has converged to quantify its uncertainty.
+# (Use real death data as expected values for Poisson variables, then simulate Poisson data based on these values to replace the real data.)
 # 7. Plot a graph to illustrate the fit of the simulation model to the real death data.
 
 setwd("/Users/macbook/Statistical-Programming/assignment")
