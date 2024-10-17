@@ -40,14 +40,14 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
   inft <- matrix(nrow = max_day, ncol = n.rep) # initialise matrix to store the number of new infections per day 
   intr <- matrix(nrow = max_day, ncol = n.times) # initialise matrix to store the number of new infections per day after bootstrapping
   
-  # 1 find the probability vector of each disease duration based on given log normal density
+  # 1 Find the probability vector of each disease duration based on given log normal density
   dis_dur <- seq(1, 80) # create disease duration vector
   # calculate the probability vector, meanlog and sdlog are mean and standard deviation of the distribution on the log scale
   prob_vec <- dlnorm(dis_dur, meanlog = 3.152, sdlog = 0.451) 
   norm_prob_vec <- prob_vec / sum(prob_vec) # normalise the probability vector so that the probabilities sum to 1
   
   if(is.null(t0)){
-    # 2
+    # 2 Guess the infection time of each victim
     #create a vector of day of death for each individual fatality
     death_d <- rep(t, deaths)
     # randomly generate n infection-to-death durations with replacement based on probability vector
@@ -63,14 +63,14 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
   legend("topright", legend = c('Real deaths', 'Simulated deaths', 'Estimated incidence'), col = c("black", "blue", "red"), lwd = 3) 
   
   for(k in 1:n.rep){
-    # 4 
+    # 4 Generate n new as infection-to-death duration and add these to the infection times in t0 to get simulated death days. Compute P
     # generate n new draws from the infection-to-death distribution as simulation duaration
     simu_duat <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
     death_d_s <- t0 + simu_duat # add simulation duration to t0 to get simulated death days
     d_s <- tabulate(death_d_s, nbins = max_day) # create a vector of simulated deaths on each day
     P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
     
-    # 5. randomly order each time of infection and move it a few days
+    # 5 Randomly order each time of infection and move it a few days
     t0_dura <- cbind(t0, simu_duat) # combine t0 to duration time to keep infection to death duration fixed
     t0_dura_ran <- t0_dura[sample(length(t0)), ] # randomly order t0
     
@@ -119,7 +119,9 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL,n.times = 100){
     
   }
   
-  #
+  # If bs = TRUE, run the following code to quantify its uncertainty.
+  # Treats each real deaths data as a estimate of the expected values of a Poisson random variables.
+  # Get 150 Poisson distributions and randomly select numbers from them to get real data estimates. 
   if(bs){
     plot(1:max_day, inft[ ,ncol(inft)], ylim = c(0, 1700), type = 'l', col = 'blue', lwd = 4, xlab = "Days of the year", ylab = "Number of deaths/incidence", main = "Deaths/incidence each day in bootstrapping")
     legend("topright", legend = c('Real incidence', 'Simulated incidence', 'Real deaths', 'The first day of UK lockdown'), col = c("blue", "red", "grey", 'black'), lwd = 3)
