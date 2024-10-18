@@ -144,16 +144,20 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
   # Treats each real deaths data as a estimate of the expected values of a Poisson random variable.
   # Get 150 Poisson distributions and randomly select numbers from them to get real data estimates. 
   if(bs){
+    # draw a plot of incidence based on real data's converge result, add legend and a line of real death
     plot(1:max_day, inft[ ,ncol(inft)], ylim = c(0, 1700), type = 'l', col = 'blue', lwd = 4, xlab = "Days of the year", ylab = "Number of deaths/incidence", main = "Deaths/incidence each day in bootstrapping")
     legend("topright", legend = c('Real data incidence', 'Simulated data incidence', 'Real deaths', 'The first day of UK lockdown'), col = c("blue", "red", "grey", 'black'), lwd = 3)
     lines(1:max_day, d, col = 'grey', lwd = 3)
     abline(v = 84, col = "black", lwd = 2, lty = 2)
     text(x = 84, y = -50, labels = "84", pos = 3, col = "black")
+    
+    # Treats each real deaths data as a estimate of the expected values of a Poisson random variable
+    # generate n.rep sequences of estimated data in place of the real deaths data
     death_simulation <- sapply(deaths, function(x) rpois(n.rep, x))
     
     for(k in 1:n.rep){
       
-      deaths_new <- death_simulation[k, ]
+      deaths_new <- death_simulation[k, ] #select a sequence of estimated data to run the model 
       
       if(is.null(t0)){
         # 2 Guess the infection time of each victim
