@@ -52,7 +52,7 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
   P_vec <- c() # initialise vector to store each P
   t0_mat <- matrix(nrow = n, ncol = n.rep) # initialise matrix to store each t0 after each full update
   inft <- matrix(nrow = max_day, ncol = n.rep) # initialise matrix to store the number of new infections per day 
-  intr <- matrix(nrow = max_day, ncol = n.times) # initialise matrix to store the number of new infections per day after bootstrapping
+  intr <- matrix(nrow = max_day, ncol = n.rep) # initialise matrix to store the number of new infections per day after bootstrapping
   
   # 1 Find the probability vector of each disease duration based on given log normal density
   dis_dur <- seq(1, 80) # create disease duration vector
@@ -82,7 +82,7 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
     simu_duat <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
     death_d_s <- t0 + simu_duat # add simulation duration to t0 to get simulated death days
     d_s <- tabulate(death_d_s, nbins = max_day) # create a vector of simulated deaths on each day
-    P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
+    P <- sum((d[1:211] - d_s[1:211])^2 / pmax(1, d_s[1:211])) # calculate modified Pearson statistic P
     
     # 5 Randomly order each time of infection and move it a few days
     t0_dura <- cbind(t0, simu_duat) # combine t0 to duration time to keep infection to death duration fixed
@@ -106,13 +106,20 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
     for (i in 1:length(death_d_m)) {
       dead_bef_move <- death_d_bm[i] # the death day before move
       dead_aft_move <- death_d_m[i] # the death day after move
+      
+      # If any death day before or after moving exceed 211, we will stop the update and skip current iteration
+      if (dead_bef_move > 211 | dead_aft_move > 211) { 
+        next  
+      }
+      
       # calculate change in P: only need to calculate the difference in deaths with the actual days for the 2 days involved in the moving
       # P_pri is before moving, P_for is after moving
       P_pri <- (d_s[dead_bef_move] - d[dead_bef_move])^2 / max(1, d_s[dead_bef_move]) + (d_s[dead_aft_move] - d[dead_aft_move])^2 / max(1, d_s[dead_aft_move])
       d_s[dead_aft_move] <- d_s[dead_aft_move] + 1 # increase deaths on day after moving by 1
       d_s[dead_bef_move] <- d_s[dead_bef_move] - 1 # decrease deaths on day before moving by 1
       P_for <- (d_s[dead_bef_move] - d[dead_bef_move])^2 / max(1, d_s[dead_bef_move]) + (d_s[dead_aft_move] - d[dead_aft_move])^2 / max(1, d_s[dead_aft_move])
-      P_m <- P + P_for - P_pri # calculate P after moving
+      P_m <- P + P_for - P_pri
+      # P_m <- sum((d[1:211] - d_s[1:211])^2 / pmax(1, d_s[1:211])) # calculate P after moving
       if(P_m < P) { # if P decreases after moving, update P and accept move
         P <- P_m
         t0_dura_ran[i,1] <- t0_dura_ran[i,1] + moving[i]
@@ -134,17 +141,17 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
   }
   
   # If bs = TRUE, run the following code to quantify the uncertainty of estimated incidence we've got.
-  # Treats each real deaths data as a estimate of the expected values of a Poisson random variables.
+  # Treats each real deaths data as a estimate of the expected values of a Poisson random variable.
   # Get 150 Poisson distributions and randomly select numbers from them to get real data estimates. 
   if(bs){
     plot(1:max_day, inft[ ,ncol(inft)], ylim = c(0, 1700), type = 'l', col = 'blue', lwd = 4, xlab = "Days of the year", ylab = "Number of deaths/incidence", main = "Deaths/incidence each day in bootstrapping")
-    legend("topright", legend = c('Real incidence', 'Simulated incidence', 'Real deaths', 'The first day of UK lockdown'), col = c("blue", "red", "grey", 'black'), lwd = 3)
+    legend("topright", legend = c('Real data incidence', 'Simulated data incidence', 'Real deaths', 'The first day of UK lockdown'), col = c("blue", "red", "grey", 'black'), lwd = 3)
     lines(1:max_day, d, col = 'grey', lwd = 3)
     abline(v = 84, col = "black", lwd = 2, lty = 2)
     text(x = 84, y = -50, labels = "84", pos = 3, col = "black")
-    death_simulation <- sapply(deaths, function(x) rpois(n.times, x))
+    death_simulation <- sapply(deaths, function(x) rpois(n.rep, x))
     
-    for(k in 1:100){
+    for(k in 1:n.rep){
       
       deaths_new <- death_simulation[k, ]
       
@@ -164,7 +171,7 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
       simu_duat <- sample(c(1:80), n, replace = TRUE, prob = norm_prob_vec)
       death_d_s <- t0 + simu_duat # add simulation duration to t0 to get simulated death days
       d_s <- tabulate(death_d_s, nbins = max_day) # create a vector of simulated deaths on each day
-      P <- sum((d - d_s)^2 / pmax(1, d_s)) # calculate modified Pearson statistic P
+      P <- sum((d[1:211] - d_s[1:211])^2 / pmax(1, d_s[1:211])) # calculate modified Pearson statistic P
       
       # 5 Randomly order each time of infection and move it a few days
       t0_dura <- cbind(t0, simu_duat) # combine t0 to duration time to keep infection to death duration fixed
@@ -188,6 +195,12 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
       for (i in 1:length(death_d_m)) {
         dead_bef_move <- death_d_bm[i] # the death day before move
         dead_aft_move <- death_d_m[i] # the death day after move
+        
+        # If any death day before or after moving exceed 211, we will stop the update process and skip current iteration
+        if (dead_bef_move > 211 | dead_aft_move > 211) { 
+          next  
+        }
+        
         # calculate change in P: only need to calculate the difference in deaths with the actual days for the 2 days involved in the moving
         # P_pri is before moving, P_for is after moving
         P_pri <- (d_s[dead_bef_move] - d[dead_bef_move])^2 / max(1, d_s[dead_bef_move]) + (d_s[dead_aft_move] - d[dead_aft_move])^2 / max(1, d_s[dead_aft_move])
@@ -217,6 +230,3 @@ deconv <- function(t,deaths,n.rep=100,bs=FALSE,t0=NULL){
 }
 
 output <- deconv(t, deaths, n.rep = 100, bs = TRUE, t0 = NULL)
-output$P
-output$inft
-output$t0
