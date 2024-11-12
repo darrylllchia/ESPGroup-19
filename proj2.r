@@ -15,13 +15,12 @@
 # (Use real death data as expected values for Poisson variables, then simulate Poisson data based on these values to replace the real data.)
 # 7. Plot a graph to illustrate the fit of the simulation model to the real death data.
 
-setwd("/Users/macbook/Statistical-Programming/assignment")
+# setwd("/Users/macbook/Statistical-Programming/assignment")
 data <- read.table('engcov.txt')[1:150, ] 
 
 t <- data$julian
 deaths <- data$nhs
-# n.rep=100
-# t0=NULL
+
 #' Function Name: deconv
 #' 
 #' This function displays the estimated incidence and death on each day of covid 19 based on real death data, 
