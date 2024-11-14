@@ -49,11 +49,11 @@ LMMprof <- function(theta, form, dat, ref) {
   B <- chol(XTWX)
   beta_hat <- backsolve(B, forwardsolve(t(B), XTWy))
   
-  qtyx <- qr.qty(qrz, y - X %*% beta_hat)
-  D <- forwardsolve(t(S), qtyx[1:p])
+  qty_xb <- qr.qty(qrz, y - X %*% beta_hat)
+  D <- forwardsolve(t(S), qty_xb[1:p])
   
-  logll <- (t(D) %*% D + t(qtyx[(p+1):n]) %*% qtyx[(p+1):n] * sigma^2)/
-    (sigma^2) / 2 + sum(log(diag(S))) + (n-dim(X)[2])*log(sigma^2)
+  logll <- (t(D) %*% D + t(qty_xb[(p+1):n]) %*% qty_xb[(p+1):n] * sigma^2) / 
+    (2 * sigma^2) + sum(log(diag(S)))  + (n / 2) * log(2 * pi)
   
   attr(logll, 'beta_hat') <- beta_hat
   
