@@ -1,11 +1,12 @@
 
 
 
-# The main purpose of this function is to initialise and set up our fixed effect and random effect matrices X and Z,
-# along with the y vector. The vector f contains the number of columns of each block in each term in ref. So the
-# first term in ref will correspond to the first f[1] columns in Z and so on. Each block will have the same standard deviation
+
 LMMsetup <- function(form, dat, ref){
-  # set up Z, X and other things that need to be setup only o
+  # The main purpose of this function is to initialise and set up our fixed effect and random effect matrices X and Z,
+  # along with the y vector. The vector f contains the number of columns of each block in each term in ref. So the
+  # first term in ref will correspond to the first f[1] columns in Z and so on. Each block will have the same standard deviation
+  
   
   # Convert the input data into a data frame format
   df <- data.frame(dat) 
@@ -124,24 +125,35 @@ lmm <- function(form,dat,ref=list()){
   # dat: the data frame containing all the variables needed in the model
   # ref: a list of vectors of variable names specifying random effects for Zb part of the model
   
-  # Set the initial theta vector (number of random effects + sigma)
+  # Set the initial theta vector (number of blocks + sigma)
   block_num <- length(ref)
   theta_start <- rep(0, length(ref)+1)
+
   
-  # If there is no random effect, use the BFGS method
-  if (length(theta_start) == 1) {
-    method = "BFGS"} 
-  # If there are random effects, use the Nelder-Mead method
-  else { method = "Nelder-Mead"}
-  
-  # Use Nelder-Mead or another method to do optimization
-  fit <- optim(theta_start, LMMprof, form = form, dat = dat, ref = ref, 
-               method = method)
-  # Get optimized theta and beta_hat
-  theta <- fit$par
-  beta_hat <- attr(LMMprof(form, dat, ref, theta), "beta_hat")
-  
-  return(list(fit = fit, theta = theta, beta_hat = beta_hat))
+  setup <- LMMsetup(form, dat, ref)
+    X <- LMMsetup(form, dat, ref)$X
+    n <- dim(X)[1]
+    p <- max(sum(setup$f), dim(X)[2])
+    if(p>n) {
+      return("Unable to run, number of columns more than number of observations")
+    }
+    else {
+      # If there is no random effect, use the BFGS method
+      if (length(theta_start) == 1) {
+        method = "BFGS"} 
+      # If there are random effects, use the Nelder-Mead method
+      else {method = "Nelder-Mead"}
+      
+      # Use Nelder-Mead or another method to do optimization
+      fit <- optim(theta_start, LMMprof, form = form, dat = dat, ref = ref, 
+                   method = method)
+      # Get optimized theta and beta_hat
+      theta <- fit$par
+      beta_hat <- attr(LMMprof(form, dat, ref, theta), "beta_hat")
+      
+      return(list(fit = fit, theta = theta, beta_hat = beta_hat))
+    }
+
 }
 
 library(nlme);library(lme4)
