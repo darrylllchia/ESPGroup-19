@@ -17,11 +17,8 @@ LMMsetup <- function(form, dat, ref){
     # set up Z
     Z <- matrix(nrow = dim(df)[1], ncol = 0)
     f <- c()
-    if(length(ref) == 0){
-        Z = Z
-        f = f
-    }
-    else {
+
+    if(length(ref) > 0){
         for(i in 1:length(ref)){
             # paste each element in ref to get a string in formula format
             fomula <- paste('~', paste(paste(ref[[i]], collapse = ':'), '-1', sep = ''), sep = '')
@@ -40,7 +37,7 @@ LMMsetup <- function(form, dat, ref){
 }
 
 
-theta <- c(0,0,0)
+# theta <- c(-0.03932876,1.42168890,1.22317100)
 LMMprof <- function(form, dat, ref, theta){
     # evaluate the (negative) log likelihood for a given theta
     # compute the corresponding beta_hat
@@ -60,7 +57,7 @@ LMMprof <- function(form, dat, ref, theta){
     if(length(f) == 0){
         qrx <- qr(X)
         beta_hat <- backsolve(qr.R(qrx),qr.qty(qrx,y)[1:p1])
-        neg_loglike <- t(y-X%*%beta_hat) %*% (y-X%*%beta_hat) / (2*sigma^2) + log(sigma)
+        neg_loglike <- t(y-X%*%beta_hat) %*% (y-X%*%beta_hat) / (2*sigma^2) + n*log(sigma)
     }
     else{
         # QR decompose Z
@@ -80,11 +77,11 @@ LMMprof <- function(form, dat, ref, theta){
         N <- forwardsolve(t(S), qtx[1:p, ])
 
         # calculate XTWy and XTWX
-        XTWy <- t(N) %*% M + t(qtx[(p+1):n, ]) %*% qty[(p+1):n] * sigma^2
-        XTWX <- t(N) %*% N + t(qtx[(p+1):n, ]) %*% qtx[(p+1):n, ] * sigma^2
+        XTWy <- t(N) %*% M + t(qtx[(p+1):n, ]) %*% qty[(p+1):n] / sigma^2
+        XTWX <- t(N) %*% N + t(qtx[(p+1):n, ]) %*% qtx[(p+1):n, ] / sigma^2
         
         # decompose XTWX with Cholesky decomposition
-        XTWX <- XTWX + 1e-6 * diag(ncol(XTWX))
+        # XTWX <- XTWX + 1e-6 * diag(ncol(XTWX))
         l <- chol(XTWX)
         
         beta_hat <- backsolve(l, forwardsolve(t(l), XTWy))
@@ -92,7 +89,7 @@ LMMprof <- function(form, dat, ref, theta){
         # calcualte log likelihood
         qtyx <- qr.qty(qrz, y - X%*%beta_hat)
         P <- forwardsolve(t(S), qtyx[1:p])
-        neg_loglike <- (sum(P^2) + t(qtyx[(p+1):n]) %*% qtyx[(p+1):n] * sigma^2)/2 +
+        neg_loglike <- (sum(P^2) + t(qtyx[(p+1):n]) %*% qtyx[(p+1):n] / sigma^2)/2 +
         sum(log(diag(S))) + (n-p)*log(sigma)
 
         #neg_loglike <- (t(P) %*% P + t(qtyx[(p+1):n]) %*% qtyx[(p+1):n] * sigma^2)/2 +
@@ -100,7 +97,7 @@ LMMprof <- function(form, dat, ref, theta){
         
         #neg_loglike <- (sum(P^2)*2 + t(qtyx[(p+1):n]) %*% qtyx[(p+1):n] * sigma^2)/2 +
         #sum(log(diag(S))) + (n-p)*log(sigma) +  n*log(2*pi)/2
-        # print(theta)
+        #print(theta)
     }
     attr(neg_loglike, 'beta_hat') <- beta_hat
     return(neg_loglike)
@@ -116,34 +113,38 @@ lmm <- function(form,dat,ref=list()){
     # dat: the data frame containing all the variables needed in the model
     # ref: a list of vectors of variable names specifying random effects for Zb part of the model
     block_num <- length(ref)
-    theta_start <- rep(0.1, length(ref)+1)
+    theta_start <- rep(0, length(ref)+1)
 
     if (length(theta_start) == 1) {
-        fit <- nlm(LMMprof, p = theta_start, form = form, dat = dat, ref = ref)
-        theta <- fit$estimate
+        fit <- optim(theta_start, LMMprof, form = form, dat = dat, ref = ref, 
+                     method = "BFGS")
     } 
     else {
         # Use Nelder-Mead or another method if multidimensional
         fit <- optim(theta_start, LMMprof, form = form, dat = dat, ref = ref, 
                method = "Nelder-Mead")
-        theta <- fit$par
     }
-    
+    theta <- fit$par
     beta_hat <- attr(LMMprof(form, dat, ref, theta), "beta_hat")
     
-    return(list(theta = theta, beta_hat = beta_hat))
+    return(list(fit = fit, theta = theta, beta_hat = beta_hat))
 }
 
 library(nlme);library(lme4)
 lmer(score ~ Machine + (1|Worker) + (1|Worker:Machine),data=Machines,
 REML=FALSE)
-lmm(score ~ Machine,Machines,list("Worker",c("Worker","Machine")))
+result <- lmm(score ~ Machine,Machines,list("Worker",c("Worker","Machine")))
+result
+exp(result$theta)
 lmm(score ~ Machine,Machines,list())
-exp(lmm(score ~ Machine,Machines,list("Worker",c("Worker","Machine")))$theta)
+reg <- lm(score ~ Machine,Machines)
+summary(reg)
+summary(reg)$sigma
+
+
 
 
 data(package = 'lme4')
-
 head(Milk)
 Milk$Diet[1:100]
 Milk$Cow
