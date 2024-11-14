@@ -157,4 +157,31 @@ lmer(protein ~ Diet + (1|Cow:Diet),data=Milk,REML=FALSE)
 result <- lmm(protein ~ Diet,Milk,list(c("Cow","Diet")))
 exp(result$theta)
 
+library(nlme);library(lme4)
+result <- lmm(score ~ Machine,Machines,list("Worker",c("Worker","Machine")))
+result
+exp(result$theta)
+lmer(score ~ Machine + (1|Worker) + (1|Worker:Machine),data=Machines,
+     REML=FALSE)
+r <- lmm(score ~ Machine,Machines,NULL)
+reg <- lm(score ~ Machine,Machines)
+summary(reg)
+summary(reg)$sigma
+exp(r$theta)
 
+
+
+
+data(package = 'nlme')
+head(Milk)
+Milk$Diet[1:100]
+Milk$Cow
+lmer(protein ~ Diet + (1|Cow:Diet),data=Milk,REML=FALSE)
+result <- lmm(protein ~ Diet,Milk,list(c("Cow","Diet")))
+exp(result$theta)
+
+r <- lmm(protein ~ Cow,Milk,list())
+reg <- lm(protein ~ Cow,Milk)
+summary(reg)
+summary(reg)$sigma
+exp(r$theta)
