@@ -38,7 +38,8 @@ LMMprof <- function(theta, form, dat, ref) {
   qtx <- qr.qty(qrz, X)
 
   sigma <- exp(theta[1])
-  rsirt <- R %*% t(R) * rep(exp(theta[-1])^2, ref_len) + diag(sigma^2, p)
+  fi <- exp(theta[-1])^2
+  rsirt <- R %*% t(R) * bdiag(lapply(1:length(fi), function(i) diag(fi[i], ref_len[i]))) + diag(sigma^2, p)
   
   S <- chol(rsirt)
   U <- forwardsolve(t(S), qtx[1:p, ])
