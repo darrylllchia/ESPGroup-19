@@ -2,7 +2,9 @@ form <- score ~ Machine
 dat <- Machines
 ref <- list("Worker",c("Worker","Machine"))
 
-
+# The main purpose of this function is to initialise and set up our fixed effect and random effect matrices X and Z,
+# along with the y vector. The vector f contains the number of columns of each block in each term in ref. So the
+# first term in ref will correspond to the first f[1] columns in Z and so on. Each block will have the same standard deviation.
 LMMsetup <- function(form, dat, ref){
     # set up Z, X and other things that need to be setup only o
     df <- data.frame(dat) 
@@ -26,7 +28,8 @@ LMMsetup <- function(form, dat, ref){
             model <- model.matrix(as.formula(fomula), df)
             # combine columns of model matrix of each block together
             Z <- cbind(Z, model)
-            
+
+            #adding number of columns involved to f
             f <- c(f, ncol(model))
         }
     }
@@ -48,12 +51,13 @@ LMMprof <- function(form, dat, ref, theta){
     X <- result$X
     y <- result$y
     f <- result$f
-    p <- sum(f)
+    p <- sum(f) #total number of random effect columns
     n <- dim(X)[1]
     p1 <- dim(X)[2]
     
     sigma <- exp(theta[1])
 
+    # if there are no random effects, return standard log likelihood
     if(length(f) == 0){
         qrx <- qr(X)
         beta_hat <- backsolve(qr.R(qrx),qr.qty(qrx,y)[1:p1])
@@ -86,7 +90,7 @@ LMMprof <- function(form, dat, ref, theta){
         
         beta_hat <- backsolve(l, forwardsolve(t(l), XTWy))
 
-        # calcualte log likelihood
+        # calculate log likelihood
         qtyx <- qr.qty(qrz, y - X%*%beta_hat)
         P <- forwardsolve(t(S), qtyx[1:p])
         neg_loglike <- (sum(P^2) + t(qtyx[(p+1):n]) %*% qtyx[(p+1):n] / sigma^2)/2 +
@@ -115,6 +119,7 @@ lmm <- function(form,dat,ref=list()){
     block_num <- length(ref)
     theta_start <- rep(0, length(ref)+1)
 
+    #if no random effects
     if (length(theta_start) == 1) {
         fit <- optim(theta_start, LMMprof, form = form, dat = dat, ref = ref, 
                      method = "BFGS")
