@@ -42,6 +42,9 @@ LMMsetup <- function(form, dat, ref){
 LMMprof <- function(form, dat, ref, theta){
   # Evaluate the (negative) log likelihood for a given theta
   # Compute the corresponding beta_hat
+  # @param theta: vector of log(std_devs). First element of theta is the log(std_dev) of residuals and subsequent elements
+  # correspond to the log(std_devs) of each block in Z
+  # returns: negative log likelihood equation for optim to minimise and the calculated beta_hat vector given a theta vector
   
   # Set up X, Z and y with LMMsetup function
   result <- LMMsetup(form, dat, ref)
