@@ -1,8 +1,4 @@
 
-form <- score ~ Machine
-dat <- Machines
-ref <- list("Worker",c("Worker","Machine"))
-
 
 LMMsetup <- function(form, dat, ref){
   # set up Z, X and other things that need to be setup only o
