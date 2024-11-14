@@ -124,7 +124,7 @@ lmm <- function(form,dat,ref=list()){
   
   # Set the initial theta vector (number of blocks + sigma)
   block_num <- length(ref)
-  theta_start <- rep(0, length(ref)+1)
+  theta_start <- rep(1, length(ref)+1)
 
   
   setup <- LMMsetup(form, dat, ref)
