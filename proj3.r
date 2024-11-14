@@ -1,5 +1,9 @@
 
 
+
+# The main purpose of this function is to initialise and set up our fixed effect and random effect matrices X and Z,
+# along with the y vector. The vector f contains the number of columns of each block in each term in ref. So the
+# first term in ref will correspond to the first f[1] columns in Z and so on. Each block will have the same standard deviation
 LMMsetup <- function(form, dat, ref){
   # set up Z, X and other things that need to be setup only o
   
