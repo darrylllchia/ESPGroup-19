@@ -1,7 +1,4 @@
 
-
-
-
 LMMsetup <- function(form, dat, ref){
   # The main purpose of this function is to initialise and set up our fixed effect and random effect matrices X and Z,
   # along with the y vector. The vector f contains the number of columns of each block in each term in ref. So the
@@ -78,7 +75,7 @@ LMMprof <- function(form, dat, ref, theta){
     # theta <- c(log(sigma), log()) it doesn't matter what theta is
     
     # Calculate first term of RHS of W
-    first_term <- R %*% t(R) * rep(exp(theta[-1])^2, f) + diag(sigma^2, p)
+    first_term <- R %*% (rep(exp(theta[-1])^2, f) * t(R)) + diag(sigma^2, p)
     
     # Decompose first_term using Cholesky decomposition
     S <- chol(first_term)
@@ -131,37 +128,38 @@ lmm <- function(form,dat,ref=list()){
 
   
   setup <- LMMsetup(form, dat, ref)
-    X <- LMMsetup(form, dat, ref)$X
-    n <- dim(X)[1]
-    p <- max(sum(setup$f), dim(X)[2])
-    if(p>n) {
-      return("Unable to run, number of columns more than number of observations")
-    }
-    else {
-      # If there is no random effect, use the BFGS method
-      if (length(theta_start) == 1) {
-        method = "BFGS"} 
-      # If there are random effects, use the Nelder-Mead method
-      else {method = "Nelder-Mead"}
-      
-      # Use Nelder-Mead or another method to do optimization
-      fit <- optim(theta_start, LMMprof, form = form, dat = dat, ref = ref, 
-                   method = method)
-      # Get optimized theta and beta_hat
-      theta <- fit$par
-      beta_hat <- attr(LMMprof(form, dat, ref, theta), "beta_hat")
-      
-      return(list(fit = fit, theta = theta, beta_hat = beta_hat))
-    }
+  X <- LMMsetup(form, dat, ref)$X
+  n <- dim(X)[1]
+  p <- max(sum(setup$f), dim(X)[2])
+
+  if(p>n) {
+    return("Unable to run, number of columns more than number of observations")
+  }
+  else {
+    # If there is no random effect, use the BFGS method
+    if (length(theta_start) == 1) {
+      method = "BFGS"} 
+    # If there are random effects, use the Nelder-Mead method
+    else {method = "Nelder-Mead"}
+    
+    # Use Nelder-Mead or another method to do optimization
+    fit <- optim(theta_start, LMMprof, form = form, dat = dat, ref = ref, 
+                  method = method)
+    # Get optimized theta and beta_hat
+    theta <- fit$par
+    beta_hat <- attr(LMMprof(form, dat, ref, theta), "beta_hat")
+    
+    return(list(fit = fit, theta = theta, beta_hat = beta_hat))
+  }
 
 }
 
 library(nlme);library(lme4)
-lmer(score ~ Machine + (1|Worker) + (1|Worker:Machine),data=Machines,
-     REML=FALSE)
 result <- lmm(score ~ Machine,Machines,list("Worker",c("Worker","Machine")))
 result
 exp(result$theta)
+lmer(score ~ Machine + (1|Worker) + (1|Worker:Machine),data=Machines,
+     REML=FALSE)
 lmm(score ~ Machine,Machines,list())
 reg <- lm(score ~ Machine,Machines)
 summary(reg)
