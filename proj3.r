@@ -39,8 +39,12 @@ LMMsetup <- function(form, dat, ref){
 
 # theta <- c(-0.03932876,1.42168890,1.22317100)
 LMMprof <- function(form, dat, ref, theta){
-    # evaluate the (negative) log likelihood for a given theta
-    # compute the corresponding beta_hat
+    # -evaluate the (negative) log likelihood for a given theta
+    # -compute the corresponding beta_hat
+    # @param theta: list of log(std_devs). First element will be log std_dev of residual, whereas the subsequent elements
+    # will correspond to each random effect
+    # output: negative log likelihood function for optim to minimise, along with beta_hat vector calculated using
+    # the vector theta
 
     # set up X, Z and y with LMMsetup function
     result <- LMMsetup(form, dat, ref)
