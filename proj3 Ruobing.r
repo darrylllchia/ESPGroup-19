@@ -36,16 +36,18 @@ LMMprof <- function(theta, form, dat, ref) {
   R <- qr.R(qrz)
   qty <- qr.qty(qrz, y)
   qtx <- qr.qty(qrz, X)
-
+  
   sigma <- exp(theta[1])
   fi <- exp(theta[-1])^2
   rsirt <- R %*% t(R) * bdiag(lapply(1:length(fi), function(i) diag(fi[i], ref_len[i]))) + diag(sigma^2, p)
+  #rsirt <- rsirt + diag(1e-6, nrow(rsirt))
   
   S <- chol(rsirt)
   U <- forwardsolve(t(S), qtx[1:p, ])
   L <- forwardsolve(t(S), qty[1:p])
-  XTWX <- t(U) %*% U + t(qtx[(p+1):n, ]) %*% qtx[(p+1):n, ] * sigma^2
-  XTWy <- t(U) %*% L + t(qtx[(p+1):n, ]) %*% qty[(p+1):n] * sigma^2
+  XTWX <- t(U) %*% U + t(qtx[(p+1):n, ]) %*% qtx[(p+1):n, ] / sigma^2
+  #XTWX <- XTWX + diag(1e-6, nrow(XTWX))
+  XTWy <- t(U) %*% L + t(qtx[(p+1):n, ]) %*% qty[(p+1):n] / sigma^2
   
   B <- chol(XTWX)
   beta_hat <- backsolve(B, forwardsolve(t(B), XTWy))
@@ -53,8 +55,8 @@ LMMprof <- function(theta, form, dat, ref) {
   qty_xb <- qr.qty(qrz, y - X %*% beta_hat)
   D <- forwardsolve(t(S), qty_xb[1:p])
   
-  logll <- (t(D) %*% D + t(qty_xb[(p+1):n]) %*% qty_xb[(p+1):n] * sigma^2) / 
-    (2 * sigma^2) + sum(log(diag(S))) + (n-p)*log(sigma) + (n / 2) * log(2 * pi)
+  logll <- (t(D) %*% D + t(qty_xb[(p+1):n]) %*% qty_xb[(p+1):n] / sigma^2) / 
+    2 + sum(log(diag(S))) + (n-p)*log(sigma) + (n / 2) * log(2 * pi)
   
   attr(logll, 'beta_hat') <- beta_hat
   
@@ -67,7 +69,7 @@ lmm <- function(form, dat, ref=list()) {
   theta_init <- c(log(sd(y)), rep(log(1), length(ref)))
   
   #result <- optim(par = theta_init,fn = LMMprof,method = "BFGS")
-  result <- optim(par = theta_init, LMMprof,form = form, dat = dat, ref = ref,method = "BFGS")
+  result <- optim(par = theta_init, LMMprof,form = form, dat = dat, ref = ref,method = "Nelder-Mead")
   
   theta <- result$par
   beta_hat <- attr(LMMprof(theta,form, dat, ref), "beta_hat")
@@ -80,8 +82,8 @@ dat <- Machines
 ref <- list("Worker", c("Worker", "Machine"))
 result <- lmm(form, dat, ref)
 
-print(result$theta)
-print(result$beta_hat)
+print(exp(result$theta))
+
 
 lmm(score ~ Machine,Machines,list("Worker",c("Worker","Machine")))
 lmer(score ~ Machine + (1|Worker) + (1|Worker:Machine),data=Machines,
