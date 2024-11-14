@@ -53,7 +53,7 @@ LMMprof <- function(theta, form, dat, ref) {
   D <- forwardsolve(t(S), qty_xb[1:p])
   
   logll <- (t(D) %*% D + t(qty_xb[(p+1):n]) %*% qty_xb[(p+1):n] * sigma^2) / 
-    (2 * sigma^2) + sum(log(diag(S)))  + (n / 2) * log(2 * pi)
+    (2 * sigma^2) + sum(log(diag(S))) + (n-p)*log(sigma) + (n / 2) * log(2 * pi)
   
   attr(logll, 'beta_hat') <- beta_hat
   
@@ -85,3 +85,4 @@ print(result$beta_hat)
 lmm(score ~ Machine,Machines,list("Worker",c("Worker","Machine")))
 lmer(score ~ Machine + (1|Worker) + (1|Worker:Machine),data=Machines,
      REML=FALSE)
+
