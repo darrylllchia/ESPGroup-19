@@ -4,6 +4,13 @@
 # All of us explained our parts to each other to understand and improve our work. 
 # Finally, we test our function and agreed on this final piece of work. 
 
+# Aim of this task: Write a function to estimate simple linear mixed model by optimizing log likelihood.
+
+# Approach:
+# 1. Use cholesky decomposition and QR decomposition to calculate beta_hat efficiently.
+# 2. Write loglikelihood function as objective function of optimization.
+# 3. Use Nelder-Mead method to optimize objective function with respect to theta and estimate beta_hat and theta.
+
 
 LMMsetup <- function(form, dat, ref){
   #' The function is to set up our fixed effect and random effect matrices X and Z, along with the y vector. 
@@ -155,9 +162,9 @@ lmm <- function(form, dat, ref=list()) {
   if (p > n) {
     return("Unable to run, number of columns more than number of observations")
   }
+
   # If n > p, use the method
   else {
-
     # If there is no random effect, use BFGS method
     if (length(theta_start) == 1) {method = "BFGS"}
     # If there are random effects, use Nelder-Mead method
