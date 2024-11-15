@@ -106,11 +106,11 @@ LMMprof <- function(theta,X,Z,y,f){
     XTWy <- t(N) %*% M + t(qtx[(p+1):n, ]) %*% qty[(p+1):n] / sigma^2
     XTWX <- t(N) %*% N + t(qtx[(p+1):n, ]) %*% qtx[(p+1):n, ] / sigma^2
     
-    # check if XTWX is positive definite before Cholesky decomposition
+    # Check if XTWX is positive definite before Cholesky decomposition
     is_positive_definite_chol <- function(matrix) {
-      # if successfully decompose, matrix is positive definite, directly use Cholesky decomposition
+      # If successfully decompose, matrix is positive definite, directly use Cholesky decomposition
       tryCatch({chol(matrix)}, 
-      # if fail, matrix isn't positive definite, add a small regularization term before Cholesky decomposition
+      # If fail, matrix isn't positive definite, add a small regularization term before Cholesky decomposition
       error = function(e) {
         chol(matrix + 1e-6 * diag(ncol(matrix))) 
       })
@@ -171,36 +171,34 @@ lmm <- function(form, dat, ref=list()) {
   # Find the max df in linear and linear mixed model
   p <- max(sum(setup$f), dim(X)[2])
   
-  # If p > n, can not use this method
+  # If p > n, stop, can not use this method
   if (p > n) {
     stop("Unable to run, number of columns more than number of observations")
   }
+
   # If n > p, use the method
-  else {
+  # If there is no random effect, use BFGS method
+  if (length(theta_start) == 1) {method = "BFGS"}
   
-    # If there is no random effect, use BFGS method
-    if (length(theta_start) == 1) {method = "BFGS"}
-    
-    # If there are random effects, check the linearly correlation, use Nelder-Mead method
-    else {
-      # Calculate the rank of random effect matrix
-      rank_Z <- rankMatrix(Z)[1]
-      # If random-effect model matrix is not full rank, raise warning
-      if (rank_Z < ncol(Z)) {
-        print("With linearly correlated random effects")
-      }
-      method = "Nelder-Mead"
+  # If there are random effects, check the linearly correlation, use Nelder-Mead method
+  else {
+    # Calculate the rank of random effect matrix
+    rank_Z <- rankMatrix(Z)[1]
+    # If random-effect model matrix is not full rank, raise warning
+    if (rank_Z < ncol(Z)) {
+      print("With linearly correlated random effects")
     }
-    
-    # Optimization
-    fit <- optim(par = theta_start, fn = LMMprof, X=setup$X, Z=setup$Z, y=setup$y, f=setup$f, 
-                 method = method)
-    
-    # Get optimized theta and beta_hat
-    theta <- fit$par
-    beta_hat <- attr(LMMprof(X=setup$X, Z=setup$Z, y=setup$y, f=setup$f , theta), "beta_hat")
-    
-    return(list(theta = theta, beta_hat = beta_hat))
+    method = "Nelder-Mead"
   }
+  
+  # Optimization
+  fit <- optim(par = theta_start, fn = LMMprof, X=setup$X, Z=setup$Z, y=setup$y, f=setup$f, 
+                method = method)
+  
+  # Get optimized theta and beta_hat
+  theta <- fit$par
+  beta_hat <- attr(LMMprof(X=setup$X, Z=setup$Z, y=setup$y, f=setup$f , theta), "beta_hat")
+    
+  return(list(theta = theta, beta_hat = beta_hat))
   
 }
